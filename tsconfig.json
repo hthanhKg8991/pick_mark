@@ -1,0 +1,27 @@
+{
+  "extends": "@react-native/typescript-config/tsconfig.json",
+  "compilerOptions": {
+    "target": "esnext",
+    "module": "NodeNext",
+    "strict": true,
+    "moduleResolution": "NodeNext",
+    "allowSyntheticDefaultImports": true,
+    "jsx": "react-native",
+    "paths": {
+      "*": ["./src/*"],
+      "Services/*": ["./src/Services/*"],
+      "Components/*": ["./src/Components/*"],
+      "Screens/*": ["./src/Screens/*"],
+      "Stores/*": ["./src/Stores/*"],
+      "Utils/*": ["./src/Utils/*"],
+      "Navigation/*": ["./src/Navigation/*"],
+      "Reducers/*": ["./src/Reducers/*"],
+    }
+  },
+  "exclude": [
+    "node_modules",
+    "babel.config.js",
+    "metro.config.js",
+    "jest.config.js"
+  ]
+}
