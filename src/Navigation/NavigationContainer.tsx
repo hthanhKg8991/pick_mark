@@ -1,6 +1,6 @@
 import { NavigationContainer, NavigationState, useNavigationContainerRef } from '@react-navigation/native';
-import React, { useEffect } from 'react';
 import { navigationRef } from 'Navigation/RootNavigation';
+import React, { useEffect } from 'react';
 import AppNavigator from './AppNavigator';
 const AppNavigationContainer = () => {
 
@@ -17,12 +17,12 @@ const AppNavigationContainer = () => {
     const onStateChange = async (state: NavigationState | undefined) => {
         if (state) {
             const { routes } = state;
-            __DEV__ && setScreenStacking(routes.map(route => `${route.name}`));
+            __DEV__ && setScreenStacking(routes.map((route: { name: any; }) => `${route.name}`));
         }
     };
     return (
         <NavigationContainer
-            ref={ref => {
+            ref={(ref: any) => {
                 navigationRef.current = ref;
                 navRef.current = ref;
             }}

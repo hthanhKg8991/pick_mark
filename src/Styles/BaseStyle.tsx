@@ -8,7 +8,7 @@ const BaseStyle = StyleSheet.create({
         flex: 1,
     },
     contentPadding:{
-        paddingHorizontal: Spacing.large,
+        paddingHorizontal: Spacing.space16,
     },
     center:{
         justifyContent: 'center',
@@ -30,16 +30,19 @@ const BaseStyle = StyleSheet.create({
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        gap: Spacing.mediumSmall,
+        gap: Spacing.space12,
     },
     letterSpacing2:{
-        letterSpacing: Spacing.tiny,
+        letterSpacing: Spacing.space2,
     },
     flexShrink:{
         flexShrink: 1,
         flexWrap: 'wrap',
         flexGrow: 1,
     },
+    floatEnd:{
+        justifyContent:'flex-end'
+    }
 });
 
 export default BaseStyle;

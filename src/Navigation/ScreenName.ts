@@ -1,3 +1,4 @@
+
 const Screens = {
     // Introduce
     Introduce: 'Introduce',
@@ -11,6 +12,7 @@ const Screens = {
     SaleOrdersDetail: 'SaleOrdersDetail',
     AppCamera: 'AppCamera',
     ScanBarcode: 'ScanBarcode',
+    SignWithSkia: 'SignWithSkia',
 };
 
 export default Screens;

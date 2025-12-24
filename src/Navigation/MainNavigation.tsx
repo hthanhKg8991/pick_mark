@@ -1,7 +1,7 @@
-import React from 'react';
-import LoginScreen from 'Screens/Auth/Login';
 import Screens from 'Navigation/ScreenName';
+import React from 'react';
 import SaleOrders from 'Screens/SaleOrders';
+import SignWithSkia from 'Screens/Signature/SignWithSkia';
 // import ScanBarcode from 'Screens/SaleOrders';
 // import AppCamera from 'Components/AppCamera/AppCamera';
 // import CreateEdit from 'Screens/SaleOrders/Components/CreateEdit';
@@ -12,8 +12,8 @@ const MainNavigation = (Stack: any) => {
     return(
         <>
             <Stack.Screen
-                name={Screens.Login}
-                component={LoginScreen}
+                name={Screens.SignWithSkia}
+                component={SignWithSkia}
                 options={{ headerShown: false }}
             />
             <Stack.Screen
