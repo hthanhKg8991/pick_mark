@@ -16,3 +16,6 @@ declare module 'react-native-config' {
     export const Config: NativeConfig;
     export default Config;
   }
+type WatermarkMode =
+    | { type: 'single'; layout: 'center' | 'diagonal' }
+    | { type: 'multiple' };

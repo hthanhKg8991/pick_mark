@@ -30,6 +30,16 @@ export const FONT_LIST = [
         source: require('../Assets/fonts/letters-blushing-touch.otf'),
     },
     {
+        key: 'roboto',
+        name: 'Roboto',
+        source: require('../Assets/fonts/Roboto.ttf'),
+    },
+    {
+        key: 'ballet_regular',
+        name: 'Ballet-Regular-VariableFont_opsz',
+        source: require('../Assets/fonts/Ballet-Regular-VariableFont_opsz.ttf'),
+    },
+    {
         key: 'montserratVariableFontWght',
         name: 'Montserrat-VariableFont_wght',
         source: require('../Assets/fonts/Montserrat-VariableFont_wght.ttf'),

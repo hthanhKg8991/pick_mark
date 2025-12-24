@@ -2,6 +2,7 @@ import Slider from '@react-native-community/slider';
 import BaseContainer from 'Base/BaseContainer';
 import { FC, memo } from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Badge } from 'react-native-paper';
 import { BaseStyle } from 'Styles';
 import { scale } from 'Themes/Scaling';
 interface SignatureTextProps {
@@ -13,6 +14,7 @@ interface SignatureTextProps {
     onChangeOpacity: (opacity: number) => void;
     rotate: number;
     setRotate: (opacity: number) => void;
+    watermarkMode: WatermarkMode;
 }
 const SignatureText: FC<SignatureTextProps> = ({
     signatureName,
@@ -22,9 +24,22 @@ const SignatureText: FC<SignatureTextProps> = ({
     watermarkOpacity,
     onChangeOpacity,
     rotate,
-    setRotate
+    setRotate,
+    watermarkMode
 }) => {
     const opacityPercent = Math.round(watermarkOpacity * 100);
+
+    const isActive = (mode: WatermarkMode) => {
+        if (mode.type !== watermarkMode.type) return false;
+
+        // Nếu là single, so sánh layout
+        if (mode.type === 'single' && watermarkMode.type === 'single') {
+            return mode.layout === watermarkMode.layout;
+        }
+
+        // Nếu là multiple, type đã giống nhau → active
+        return true;
+    };
 
     return (
 
@@ -39,12 +54,14 @@ const SignatureText: FC<SignatureTextProps> = ({
                 <Text style={styles.label}>Font Size: {Math.round(fontSize)}</Text>
                 <Slider
                     minimumValue={10}
-                    maximumValue={48}
+                    maximumValue={120}
                     value={fontSize}
                     step={1}
                     onValueChange={onChangeFontSize}
                     minimumTrackTintColor="#000"
                     maximumTrackTintColor="#ccc"
+                    disabled={isActive({ type: 'single', layout: 'diagonal' }) || isActive({ type: 'single', layout: 'center' })}
+
                 />
             </View>
             <View>
@@ -63,7 +80,7 @@ const SignatureText: FC<SignatureTextProps> = ({
                 />
             </View>
             <View>
-                <Text style={styles.label}>Xoay: {rotate}</Text>
+                <Text style={styles.label}>Xoay: {rotate}°</Text>
                 <Slider
                     minimumValue={-90}
                     maximumValue={90}
@@ -73,6 +90,7 @@ const SignatureText: FC<SignatureTextProps> = ({
                     onValueChange={setRotate}
                     minimumTrackTintColor="#000"
                     maximumTrackTintColor="#ccc"
+                    disabled={isActive({ type: 'single', layout: 'diagonal' }) || isActive({ type: 'single', layout: 'center' })}
                 />
             </View>
         </View>

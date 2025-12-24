@@ -34,7 +34,7 @@ export const FontSelector: React.FC<Props> = ({
                                 style={[
                                     styles.text,
                                     { fontFamily: FONT_MAP[font.key] },
-                                    // { fontFamily: 'Pacifico-Regular' },
+                                    // { fontFamily: 'Ballet-Regular-VariableFont_opsz' },
                                     selectedFontKey === font.key && styles.textActive,
                                 ]}
                             >

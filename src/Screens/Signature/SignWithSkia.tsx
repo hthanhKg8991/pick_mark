@@ -34,12 +34,18 @@ import BaseContainer from 'Base/BaseContainer';
 import { BaseStyle } from 'Styles';
 import { LoadingGlobal } from 'Components/AppLoading';
 import ListElements from './ListElements';
+import { getSingleFontSize } from 'Utils/Helpers';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
+
+type SingleTextMode = 'center' | 'diagonal';
+
 type WatermarkText = {
+    id: string;
     x: number;
     y: number;
     rotation: number;
+    fontSize?: number;
 };
 type FontKey =
     | 'pacifico'
@@ -47,17 +53,31 @@ type FontKey =
     | 'greatvibes'
     | 'allura'
     | 'my_everything'
-    | 'lettersBlushing';
+    | 'lettersBlushing'
+    | 'roboto'
+    | 'ballet_regular'
+    | 'montserratVariableFontWght';
 
 const SignWithSkia = () => {
     /* -------------------- STATE -------------------- */
+
+    // const [watermarkMode, setWatermarkMode] = useState<WatermarkMode>({
+    //     type: 'single',
+    //     layout: 'diagonal',
+    // });
+    const [watermarkMode, setWatermarkMode] = useState<WatermarkMode>({
+        type: 'multiple',
+    });
+    const [imageLoaded, setImageLoaded] = useState(false);
+
     const [watermarks, setWatermarks] = useState<WatermarkText[]>([]);
-    const [watermarkOpacity, setWatermarkOpacity] = useState(0.25);
+    const [watermarkOpacity, setWatermarkOpacity] = useState(0.7);
     const [signatureName, setSignatureName] = useState('Thanh');
     const [fontColor, setFontColor] = useState('#ffffff');
     const [imageUri, setImageUri] = useState<string | null>(null);
     const [fontSize, setFontSize] = useState(12);
-    const [rotate, setRotate] = useState(0);
+    const [rotate, setRotate] = useState(-30);
+    const [ready, setReady] = useState(false);
     const [selectedFontKey, setSelectedFontKey] =
         useState<FontKey>('pacifico');
 
@@ -71,6 +91,7 @@ const SignWithSkia = () => {
     /* -------------------- PREVIEW SIZE -------------------- */
     const previewWidth = SCREEN_WIDTH;
     const previewHeight = useMemo(() => {
+        console.log('N41Mobile:: image', image);
         if (!image) return SCREEN_WIDTH;
         return (image.height() / image.width()) * previewWidth;
     }, [image, previewWidth]);
@@ -93,6 +114,13 @@ const SignWithSkia = () => {
         skiaColor.current = Skia.Color(fontColor);
     }, [fontColor]);
 
+    useEffect(() => {
+        if (image) {
+            setImageLoaded(true);
+        }
+    }, [image]);
+
+
     // watermark opacity helper
     const getSkiaColor = (hexColor: string, opacity: number) => {
         const r = parseInt(hexColor.slice(1, 3), 16);
@@ -103,34 +131,6 @@ const SignWithSkia = () => {
         return Skia.Color(colorHex);
     };
 
-    // const generateWatermarks = (
-    //     width: number,
-    //     height: number,
-    //     textWidth: number,   // đo trước bằng font
-    //     textHeight: number,
-    //     padding = 40
-    // ): WatermarkText[] => {
-    //     const result: WatermarkText[] = [];
-
-    //     const density = 1.5;
-    //     const cellW = textWidth * density + 20;
-    //     const cellH = textHeight * density + 20;
-
-
-    //     for (let row = 0, y = 0; y < height; row++, y += cellH) {
-    //         for (let x = 0; x < width; x += cellW) {
-    //             const offsetX = row % 2 === 0 ? 0 : cellW / 2;
-
-    //             result.push({
-    //                 x: x + offsetX + cellW / 2,
-    //                 y: y + cellH / 2,
-    //                 rotation: ((Math.random() * 40 - 20) * Math.PI) / 180,
-    //             });
-    //         }
-    //     }
-
-    //     return result;
-    // };
     const generateWatermarks = (
         width: number,
         height: number,
@@ -152,6 +152,7 @@ const SignWithSkia = () => {
 
             for (let x = -cellW; x < width + cellW; x += cellW) {
                 result.push({
+                    id: `${row}-${x}`,
                     x: x + offsetX + cellW / 2,
                     y: y + cellH / 2,
                     rotation,
@@ -162,6 +163,104 @@ const SignWithSkia = () => {
         return result;
     };
 
+    const createSingleWatermark = (
+        width: number,
+        height: number,
+        text: string,
+        typeface: SkFont,
+        rotate: number,
+        mode: SingleTextMode
+    ): WatermarkText[] => {
+        // Bước 1: tạo font thử nghiệm
+        let testFontSize = 100;
+        const testFont = Skia.Font(typeface.getTypeface()!, testFontSize);
+        const textBounds = testFont.measureText(text);
+console.log('N41Mobile:: mode', mode);
+        // Bước 2: tính scale để chữ chiếm 90% chiều rộng
+        const desiredWidth = mode === 'diagonal' ? width * 1.5 : width * 0.8;
+        const scale = desiredWidth / textBounds.width;
+        // const scale = (diagonal * 0.8) / textBounds.width;
+        const fontSize = testFontSize * scale;
+
+        const font = Skia.Font(typeface.getTypeface()!, fontSize);
+        const metrics = font.getMetrics();
+        const bounds = font.measureText(text);
+
+        let x = 0;
+        let y = 0;
+        let rotation = 0;
+
+        if (mode === 'center') {
+            // Nằm giữa
+            x = (width - bounds.width) / 2;
+            y = (height + bounds.height) / 2 - metrics.descent;
+            // rotation = (rotate * Math.PI) / 180;
+            rotation = 0;
+        } else if (mode === 'diagonal') {
+            // Xéo góc (ví dụ từ trái trên sang phải dưới)
+            // x = width /2 - metrics.descent -scale;
+            x = width / 2 - testFontSize;
+            // y =height /2 + bounds.height / 2 + metrics.descent;
+
+            // y = (height + bounds.height) / 2 + metrics.descent;
+            y = height - testFontSize;
+            // Xoay chữ 45 độ
+            // rotation = -Math.PI / 4; // 45 độ
+            rotation = -Math.atan(height / width)
+        }
+
+        return [
+            {
+                id: 'single',
+                x,
+                y,
+                rotation,
+                fontSize,
+            },
+        ];
+    };
+
+
+    // const createSingleWatermark = (
+    //     width: number,
+    //     height: number,
+    //     text: string,
+    //     typeface: SkFont,
+    //     rotate: number
+    // ): WatermarkText[] => {
+    //     const fontSize = getSingleFontSize(width);
+
+    //     const font = Skia.Font(
+    //         typeface.getTypeface()!,
+    //         fontSize
+    //     );
+
+    //     const bounds = font.measureText(text);
+    //     const metrics = font.getMetrics();
+
+    //     const centerX = width / 2;
+    //     const centerY = height / 2;
+
+
+    //     const offsetX = bounds.width / 2;
+    //     //   const offsetX = (width - bounds.width) / 2;
+
+    //     // const offsetY = (metrics.ascent + metrics.descent) / 2;
+    //     const offsetY = (metrics.ascent + metrics.descent) / 2 - metrics.descent;
+
+
+    //     return [
+    //         {
+    //             id: 'single',
+    //             x: centerX - offsetX,
+    //             y: centerY + offsetY,
+    //             rotation: (rotate * Math.PI) / 180,
+    //             // fontSize,
+    //         },
+    //     ];
+    // };
+
+
     /* -------------------- FONTS -------------------- */
     const fonts = {
         pacifico: useFont(FONT_LIST[0].source, fontSize),
@@ -170,6 +269,9 @@ const SignWithSkia = () => {
         allura: useFont(FONT_LIST[3].source, fontSize),
         my_everything: useFont(FONT_LIST[4].source, fontSize),
         lettersBlushing: useFont(FONT_LIST[5].source, fontSize),
+        roboto: useFont(FONT_LIST[6].source, fontSize),
+        ballet_regular: useFont(FONT_LIST[7].source, fontSize),
+        montserratVariableFontWght: useFont(FONT_LIST[8].source, fontSize),
     } as const;
 
     const currentFont = fonts[selectedFontKey];
@@ -180,49 +282,101 @@ const SignWithSkia = () => {
             // fontSize * PREVIEW_SCALE * PREVIEW_SCALE
             fontSize
         );
-    }, [currentFont, fontSize]);
+    }, [currentFont, fontSize, imageUri]);
 
 
     const textBounds = useMemo(() => {
         if (!previewFont) return null;
         return previewFont.measureText(signatureName);
-    }, [previewFont, signatureName]);
+    }, [previewFont, signatureName, imageUri]);
 
     useEffect(() => {
-        if (!image || !previewFont || !textBounds) return;
+        // if (!image ||
+        //     !previewFont ||
+        //     !previewFont.getTypeface() ||
+        //     !signatureName
+        // ) return;
+          if (!imageUri || !previewFont || !textBounds) return;
 
-        const marks = generateWatermarks(
-            previewWidth,
-            previewHeight,
-            textBounds.width,
-            textBounds.height,
-        );
+        if (watermarkMode.type === 'single') {
+            setWatermarks(
+                createSingleWatermark(
+                    previewWidth,
+                    previewHeight,
+                    signatureName,
+                    previewFont,
+                    rotate,
+                    watermarkMode.layout
+                )
+            );
+        } else {
+            const marks = generateWatermarks(
+                previewWidth,
+                previewHeight,
+                textBounds!.width,
+                textBounds!.height,
+            );
+            setWatermarks(marks);
+        }
 
-        setWatermarks(marks);
-    }, [signatureName, textBounds, previewWidth, previewHeight, rotate]);
+    }, [
+        imageUri,
+        watermarkMode,
+        signatureName,
+        textBounds,
+        previewWidth,
+        previewHeight,
+        rotate,
+        previewFont
+    ]);
 
 
     /* -------------------- PICK IMAGE -------------------- */
     const pickImage = useCallback(async () => {
         const res = await launchImageLibrary({ mediaType: 'photo' });
+
         if (res.assets?.[0]?.uri) {
             setImageUri(res.assets[0].uri);
-            textX.value = 50;
-            textY.value = 80;
-            const marks = generateWatermarks(
-                previewWidth,
-                previewHeight,
-                textBounds?.width ?? 100,
-                textBounds?.height ?? 40
-
-            );
-
-            setWatermarks(marks);
 
             paths.current = [];
             forceUpdate(v => v + 1);
         }
     }, []);
+
+    // const pickImage = useCallback(async () => {
+    //     const res = await launchImageLibrary({ mediaType: 'photo' });
+    //     if (res.assets?.[0]?.uri) {
+    //         setImageUri(res.assets[0].uri);
+    //         // textX.value = 50;
+    //         // textY.value = 80;
+    //         if (!previewFont) return;
+    //         if (watermarkMode.type === 'single') {
+    //             setWatermarks(
+    //                 createSingleWatermark(
+    //                     previewWidth,
+    //                     previewHeight,
+    //                     signatureName,
+    //                     previewFont,
+    //                     rotate,
+    //                     watermarkMode.layout
+    //                 )
+    //             );
+    //         } else {
+    //             const marks = generateWatermarks(
+    //                 previewWidth,
+    //                 previewHeight,
+    //                 textBounds?.width ?? 100,
+    //                 textBounds?.height ?? 40
+
+    //             );
+    //             setWatermarks(marks);
+    //         }
+
+
+    //         paths.current = [];
+    //         forceUpdate(v => v + 1);
+    //     }
+    // }, [previewFont]);
 
     /* -------------------- GESTURES -------------------- */
     const panDraw = Gesture.Pan()
@@ -335,7 +489,13 @@ const SignWithSkia = () => {
                     console.log('N41Mobile:: fontSize * PREVIEW_SCALE  wm.x * scaleX * previewWidth', wm.x * scaleX * previewWidth);
                     const tx = wm.x * scaleX;  // vì wm.x trên actualPreviewWidth = previewWidth
                     const ty = wm.y * scaleY;  // vì wm.y trên actualPreviewHeight = previewHeight * PREVIEW_SCALE
-
+                    const waterMarkFontObj =
+                        watermarkMode.type === 'single'
+                            ? Skia.Font(
+                                currentFont.getTypeface()!,
+                                wm.fontSize! * scaleY
+                            )
+                            : fontObj;
 
                     // let previewHeightInOriginal = actualPreviewHeight * scaleY
                     // if (ty > previewHeightInOriginal) return;
@@ -345,12 +505,11 @@ const SignWithSkia = () => {
 
                     canvas.rotate(rotationDeg, 0, 0);
                     // canvas.rotate(wm.rotation * 180 / Math.PI, tx, ty);
-
                     canvas.drawText(
                         signatureName,
                         0, 0,
                         textPaint,
-                        fontObj
+                        watermarkMode.type === 'single' ? waterMarkFontObj : fontObj
                     );
 
                     canvas.restore();
@@ -376,6 +535,51 @@ const SignWithSkia = () => {
 
     };
 
+    // const renderWatermarks = () => {
+    //     if (!previewFont) return null;
+
+    //     return watermarks.map((wm, i) => {
+    //         const fontObj = Skia.Font(previewFont.getTypeface()!, wm.fontSize ?? fontSize);
+
+    //         return (
+    //             <Group
+    //                 key={i}
+    //                 transform={[
+    //                     { translateX: wm.x },
+    //                     { translateY: wm.y },
+    //                     { rotate: wm.rotation },
+    //                     { translateX: -wm.x },
+    //                     { translateY: -wm.y },
+    //                 ]}
+    //             >
+    //                 <SkiaText
+    //                     text={signatureName}
+    //                     x={wm.x}
+    //                     y={wm.y}
+    //                     font={fontObj}
+    //                     color={getSkiaColor(fontColor, watermarkOpacity)}
+    //                 />
+    //             </Group>
+    //         );
+    //     });
+    // };
+
+    const fontSizeWaterMark = (wm: WatermarkText) => {
+        if (!currentFont) return null;
+
+        // multiple → dùng previewFont
+        if (watermarkMode.type === 'multiple') {
+            return previewFont;
+        }
+
+        // single → dùng fontSize đã tính sẵn trong wm
+        const size = wm.fontSize ?? fontSize; 
+        return Skia.Font(
+            currentFont.getTypeface()!,
+            size
+        );
+    };
+
     const renderWatermarks = () => {
         return (
             <>
@@ -394,7 +598,9 @@ const SignWithSkia = () => {
                             text={signatureName}
                             x={wm.x}
                             y={wm.y}
-                            font={previewFont}
+                            font={fontSizeWaterMark(wm)}
+                            // font={Skia.Font(currentFont?.getTypeface()!, wm.fontSize!)}
+
                             color={getSkiaColor(fontColor, watermarkOpacity)}
                         />
 
@@ -407,10 +613,13 @@ const SignWithSkia = () => {
 
     /* -------------------- RENDER HEADER-------------------- */
     const renderHeader = () => {
+        const isDisabled = !imageUri || !imageLoaded; 
         return (
-            <View style={[BaseStyle.groupRow, BaseStyle.floatEnd]}>
+            <View style={[BaseStyle.groupRow, BaseStyle.floatEnd, BaseStyle.contentPadding]}>
                 <Button title="Chọn ảnh" onPress={pickImage} />
-                <Button title="Lưu ảnh" onPress={saveImage} />
+                <Button title="Lưu ảnh" onPress={saveImage} disabled={isDisabled}
+                color={isDisabled ? '#ccc' : '#2196F3'}
+                />
             </View>
         )
     }
@@ -421,12 +630,12 @@ const SignWithSkia = () => {
             containerStyle={[BaseStyle.container]}
         >
             {renderHeader()}
-            <View style={styles.container}>
+            <View style={[styles.container]}>
                 <ScrollView keyboardShouldPersistTaps="handled"
                     contentContainerStyle={{ flex: 1, flexShrink: 1 }}>
                     <GestureDetector gesture={panDraw}>
                         <View style={styles.canvasWrapper}>
-                            {image && currentFont && (
+                            {imageLoaded && currentFont && (
                                 <GestureDetector gesture={panText}>
                                     <Canvas
                                         style={{
@@ -472,24 +681,9 @@ const SignWithSkia = () => {
                         setSignatureName={setSignatureName}
                         rotate={rotate}
                         setRotate={setRotate}
+                        watermarkMode={watermarkMode}
+                        setWatermarkMode={setWatermarkMode}
                     />
-
-                    <View style={styles.actions}>
-                        {/* <Button
-                            title="Xóa chữ ký tay"
-                            onPress={() => {
-                                paths.current = [];
-                                forceUpdate(v => v + 1);
-                            }}
-                        /> */}
-                        {/* <Button
-                        title="Reset text"
-                        onPress={() => {
-                            textX.value = 50;
-                            textY.value = 80;
-                        }}
-                    /> */}
-                    </View>
                 </View>
             </View>
         </BaseContainer>

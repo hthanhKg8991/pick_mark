@@ -1,11 +1,13 @@
-import React, { FC, memo, useCallback, useState } from 'react';
+import React, { Dispatch, FC, memo, SetStateAction, useCallback, useState } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { TabView } from 'react-native-tab-view';
 
-import FontSize from './Fonts/FontSize';
+import FontStyles from './Fonts/FontStyles';
 import FontColor from './Fonts/FontColor';
 import SelectFontTab from './Fonts/SelectFontTab';
 import SignatureText from './SignatureText';
+import { FontStyle } from '@shopify/react-native-skia';
+import { BaseStyle } from 'Styles';
 
 /* ---------------- ROUTES ---------------- */
 
@@ -26,9 +28,9 @@ const CustomTabBar = memo(
 
                 const labelMap: Record<string, string> = {
                     first: 'T',
-                    second: 'Size',
+                    second: 'Styles',
                     third: 'Color',
-                    four: 'Font',
+                    four: 'Fonts',
                 };
 
                 return (
@@ -67,9 +69,26 @@ type ListElementsProps = {
     setSignatureName: (name: string) => void;
     rotate: number;
     setRotate: (name: number) => void;
+    watermarkMode: WatermarkMode;
+    setWatermarkMode: Dispatch<SetStateAction<WatermarkMode>>;
 };
 
-const ListElements: FC<ListElementsProps> = (props) => {
+const ListElements: FC<ListElementsProps> = ({
+    signatureName,
+    setSignatureName,
+    watermarkOpacity,
+    onChangeOpacity,
+    fontSize,
+    onChangeFontSize,
+    rotate,
+    setRotate,
+    fontColor,
+    onChangeFontColor,
+    selectedFontKey,
+    onSelect,
+    watermarkMode,
+    setWatermarkMode,
+}) => {
     const [index, setIndex] = useState(0);
 
     /* -------- renderScene (ĐÚNG CÁCH) -------- */
@@ -80,37 +99,39 @@ const ListElements: FC<ListElementsProps> = (props) => {
                 case 'first':
                     return (
                         <SignatureText
-                            signatureName={props.signatureName}
-                            setSignatureName={props.setSignatureName}
-                            watermarkOpacity={props.watermarkOpacity}
-                            onChangeOpacity={props.onChangeOpacity}
-                            fontSize={props.fontSize}
-                            onChangeFontSize={props.onChangeFontSize}
-                            rotate={props.rotate}
-                            setRotate={props.setRotate}
+                            signatureName={signatureName}
+                            setSignatureName={setSignatureName}
+                            watermarkOpacity={watermarkOpacity}
+                            onChangeOpacity={onChangeOpacity}
+                            fontSize={fontSize}
+                            onChangeFontSize={onChangeFontSize}
+                            rotate={rotate}
+                            setRotate={setRotate}
+                            watermarkMode={watermarkMode}
                         />
                     );
                 case 'second':
                     return (
-                        <FontSize
-                            fontSize={props.fontSize}
-                            onChangeFontSize={props.onChangeFontSize}
+                        <FontStyles
+                            signatureName={signatureName}
+                            watermarkMode={watermarkMode}
+                            setWatermarkMode={setWatermarkMode}
 
                         />
                     );
                 case 'third':
                     return (
                         <FontColor
-                            fontColor={props.fontColor}
-                            onChangeFontColor={props.onChangeFontColor}
+                            fontColor={fontColor}
+                            onChangeFontColor={onChangeFontColor}
                         />
                     );
                 case 'four':
                     return (
                         <SelectFontTab
-                            signatureName={props.signatureName}
-                            selectedFontKey={props.selectedFontKey}
-                            onSelectFont={props.onSelect}
+                            signatureName={signatureName}
+                            selectedFontKey={selectedFontKey}
+                            onSelectFont={onSelect}
                         />
                     );
                 default:
@@ -118,17 +139,19 @@ const ListElements: FC<ListElementsProps> = (props) => {
             }
         },
         [
-            props.signatureName,
-            props.fontSize,
-            props.fontColor,
-            props.watermarkOpacity,
-            props.selectedFontKey,
-            props.rotate,
+            signatureName,
+            fontSize,
+            fontColor,
+            watermarkOpacity,
+            selectedFontKey,
+            rotate,
+            watermarkMode,
+            setWatermarkMode,
         ]
     );
 
     return (
-        <View style={styles.container}>
+        <View style={[styles.container, BaseStyle.contentPadding]}>
             <CustomTabBar
                 routes={routes}
                 index={index}
@@ -155,7 +178,7 @@ export default memo(ListElements);
 const styles = StyleSheet.create({
     container: {
         backgroundColor: '#fff',
-        flex:1
+        flex: 1
     },
     tabBar: {
         flexDirection: 'row',
